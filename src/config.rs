@@ -1,5 +1,5 @@
-use std::{net, path};
 use std::net::SocketAddrV4;
+use std::{net, path};
 use thiserror::Error;
 
 /// Server config
@@ -11,7 +11,11 @@ pub struct Config<'a> {
 }
 
 impl<'a> Config<'a> {
-    pub fn new(socket_addr_v4: SocketAddrV4, root_folder_path: &'a path::Path, threads_number: u8) -> Self {
+    pub fn new(
+        socket_addr_v4: SocketAddrV4,
+        root_folder_path: &'a path::Path,
+        threads_number: u8,
+    ) -> Self {
         Self {
             socket_addr_v4,
             root_folder_path,

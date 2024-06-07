@@ -1,6 +1,6 @@
-use std::{net, path, process};
 use clap::Parser;
 use simple_web_server::config;
+use std::{net, path, process};
 
 fn main() -> process::ExitCode {
     // Arguments parsing
@@ -11,9 +11,7 @@ fn main() -> process::ExitCode {
         Addr: {}\n\
         Root folder {}\n\
         Threads number: {}",
-        args.socket_addr_v4,
-        args.root_folder_path,
-        args.threads_number
+        args.socket_addr_v4, args.root_folder_path, args.threads_number
     );
 
     // Config building
@@ -51,17 +49,21 @@ impl Args {
         }
         let threads_number = self.threads_number;
         if threads_number == 0 {
-            return Err(config::ConfigError::ZeroThreadsNumber)
+            return Err(config::ConfigError::ZeroThreadsNumber);
         }
 
-        Ok(config::Config::new(socket_addr_v4, root_folder_path, threads_number))
+        Ok(config::Config::new(
+            socket_addr_v4,
+            root_folder_path,
+            threads_number,
+        ))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::Args;
     use super::*;
+    use crate::Args;
     #[test]
     fn build_config_from_args_wrong_addr() {
         let args = Args {
@@ -81,7 +83,10 @@ mod tests {
             threads_number: 4,
         };
         let config = args.build_config();
-        assert!(matches!(config, Err(config::ConfigError::WrongRootFolderPath)));
+        assert!(matches!(
+            config,
+            Err(config::ConfigError::WrongRootFolderPath)
+        ));
     }
 
     #[test]
@@ -92,7 +97,10 @@ mod tests {
             threads_number: 0,
         };
         let config = args.build_config();
-        assert!(matches!(config, Err(config::ConfigError::ZeroThreadsNumber)));
+        assert!(matches!(
+            config,
+            Err(config::ConfigError::ZeroThreadsNumber)
+        ));
     }
 
     #[test]
