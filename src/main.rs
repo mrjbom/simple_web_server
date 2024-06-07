@@ -1,7 +1,10 @@
-use clap::Parser;
-use std::net;
+mod config;
 
-fn main() {
+use std::process;
+use clap::Parser;
+
+fn main() -> process::ExitCode {
+    // Arguments parsing
     let args: Args = clap::Parser::parse();
     eprintln!(
         "Starting the server.\n\
@@ -13,6 +16,15 @@ fn main() {
         args.root_folder_path,
         args.threads_number
     );
+
+    // Config building
+    let config = config::Config::build_from_args(&args);
+    if let Err(error) = config {
+        eprintln!("Server configuration error:\n{error}");
+        return process::ExitCode::FAILURE;
+    }
+
+    return process::ExitCode::SUCCESS;
 }
 
 /// Simple multithreaded web server
