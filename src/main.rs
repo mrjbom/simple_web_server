@@ -1,11 +1,11 @@
 use clap::Parser;
-use simple_web_server::config;
+use simple_web_server::{config, Server};
 use std::{net, path, process};
 
 fn main() -> process::ExitCode {
     // Arguments parsing
     let args: Args = clap::Parser::parse();
-    eprintln!(
+    println!(
         "Starting the server.\n\
         Current configuration:\n\
         Addr: {}\n\
@@ -20,6 +20,16 @@ fn main() -> process::ExitCode {
         eprintln!("Server configuration error:\n{error}");
         return process::ExitCode::FAILURE;
     }
+    let config = config.unwrap();
+
+    // Server Initialization
+    println!("Initialization...");
+    let server = Server::init(config);
+    if let Err(error) = server {
+        eprintln!("Server initialization error:\n{error}");
+        return process::ExitCode::FAILURE;
+    }
+    println!("Initialized.");
 
     return process::ExitCode::SUCCESS;
 }
@@ -52,11 +62,11 @@ impl Args {
             return Err(config::ConfigError::ZeroThreadsNumber);
         }
 
-        Ok(config::Config::new(
+        Ok(config::Config {
             socket_addr_v4,
             root_folder_path,
             threads_number,
-        ))
+        })
     }
 }
 
