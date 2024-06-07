@@ -10,7 +10,7 @@ pub struct Config<'a> {
 }
 
 #[derive(Error, Debug)]
-pub enum ConfigError {
+pub enum Error {
     #[error("Wrong address.")]
     WrongAddr(#[from] net::AddrParseError),
     #[error("Wrong root folder path.")]

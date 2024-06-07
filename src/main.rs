@@ -29,7 +29,11 @@ fn main() -> process::ExitCode {
         eprintln!("Server initialization error:\n{error}");
         return process::ExitCode::FAILURE;
     }
+    let server = server.unwrap();
     println!("Initialized.");
+
+    println!("Run");
+    server.run();
 
     return process::ExitCode::SUCCESS;
 }
@@ -50,16 +54,16 @@ struct Args {
 }
 
 impl Args {
-    pub fn build_config(&self) -> Result<config::Config, config::ConfigError> {
+    pub fn build_config(&self) -> Result<config::Config, config::Error> {
         let socket_addr_v4 = self.socket_addr_v4.parse::<net::SocketAddrV4>()?;
         let root_folder_path = path::Path::new(self.root_folder_path.as_str());
         if !root_folder_path.is_dir() {
             // The path does not exist or does not point to the directory or cannot be accessed.
-            return Err(config::ConfigError::WrongRootFolderPath);
+            return Err(config::Error::WrongRootFolderPath);
         }
         let threads_number = self.threads_number;
         if threads_number == 0 {
-            return Err(config::ConfigError::ZeroThreadsNumber);
+            return Err(config::Error::ZeroThreadsNumber);
         }
 
         Ok(config::Config {
