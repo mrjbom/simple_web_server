@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 thiserror = "1.0.61"
 clap = { version = "4.5.6", features = ["derive"] }
+urlencoding = "2.1.3"

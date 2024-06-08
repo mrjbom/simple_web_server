@@ -1,6 +1,5 @@
 use std::io::{BufRead, Read};
-use std::net::TcpStream;
-use std::{io, net, time};
+use std::{io, net, path, string, time};
 use thiserror::Error;
 
 const MAX_REQUEST_READ_SIZE: usize = 4096;
@@ -8,7 +7,6 @@ const READ_TIMEOUT_MILLIS: u64 = 5000;
 
 /// HTTP connection.
 /// Manages the connection, parses the request and generates a response.
-
 pub struct HTTPConnection {
     tcp_stream: net::TcpStream,
 }
@@ -29,11 +27,14 @@ impl HTTPConnection {
         let _ = stream.set_read_timeout(Some(time::Duration::from_millis(READ_TIMEOUT_MILLIS)));
         let mut buf_reader = io::BufReader::new(&stream);
 
+        // Check and read request
         let request = read_http_request(&mut buf_reader)?;
+        let path = get_requested_path(&request)?;
 
-        // Request has been read
+        // HTTP request has been read
         //println!("request:\n\"{request}\"");
         //println!("request length: {}", request.len());
+        println!("{path:?}");
 
         Ok(())
     }
@@ -90,10 +91,30 @@ fn read_http_request(buf_reader: &mut impl BufRead) -> Result<String, Error> {
     Ok(request)
 }
 
+fn get_requested_path(request: &String) -> Result<path::PathBuf, Error> {
+    let first_line = request
+        .lines()
+        .next()
+        .unwrap();
+    // First line is "GET PATH HTTP..."
+    // It is necessary to find the PATH
+    let path_string: String = first_line
+        .chars()
+        .skip_while(|&ch| ch != ' ') // Skips first word
+        .skip(1) // Skips space before PATH
+        .take_while(|&ch| ch != ' ') // Takes PATH until space before HTTP...
+        .collect();
+    // Decode URI string from "percent-encoding"
+    let path_string = urlencoding::decode(path_string.as_str())?;
+    Ok(path::PathBuf::from(path_string.to_string()))
+}
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Failed to read request from socket: {0}")]
     RequestReadError(io::Error),
     #[error("Wrong request")]
     WrongRequest,
+    #[error("Wrong URI in request {0}")]
+    WrongUri(#[from] string::FromUtf8Error),
 }
