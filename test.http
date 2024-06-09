@@ -1,5 +1,0 @@
-### GET request to example server
-GET 127.0.0.1:7878
-Connection: Keep-Alive
-
-###

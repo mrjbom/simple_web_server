@@ -31,12 +31,15 @@ impl<'a> Server<'a> {
                     Ok(addr) => println!("{addr}"),
                     Err(error) => eprintln!("Failed to get remote address: {error}"),
                 }
+
                 // Perform connection serving
                 let http_connection =
                     http_connection::HTTPConnection::new(stream, self.config.root_folder_path);
                 let result = http_connection.perform();
+
+                // Threads error serving
                 if let Err(error) = result {
-                    // I don't want to print an error related to timeouts
+                    // I don't want to print timeout-related errors
                     if let http_connection::Error::RequestReadError(ref io_error) = error {
                         if io_error.kind() == io::ErrorKind::TimedOut {
                             continue;
