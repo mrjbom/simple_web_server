@@ -1,9 +1,9 @@
 /// Server
 use std::{io, net};
-use thiserror::Error;
 
 pub mod config;
 mod http_connection;
+mod thread_pool;
 
 pub struct Server<'a> {
     config: config::Config<'a>,
@@ -49,7 +49,7 @@ impl<'a> Server<'a> {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("TCP listener binding error: {0}")]
     TcpListenerBindingError(#[from] io::Error),

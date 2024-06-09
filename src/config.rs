@@ -1,5 +1,4 @@
 use std::{net, path};
-use thiserror::Error;
 
 /// Server config
 #[derive(Debug)]
@@ -9,7 +8,7 @@ pub struct Config<'a> {
     pub threads_number: u8,
 }
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Wrong address.")]
     WrongAddr(#[from] net::AddrParseError),
