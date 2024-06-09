@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::{fs, io, io::BufRead, net, path, string, time};
 
 const MAX_REQUEST_READ_SIZE: usize = 4096;
@@ -40,7 +39,7 @@ impl<'a> HTTPConnection<'a> {
         // Prepare requested file path
         // Root path + path from HTTP request
         // Get root folder
-        let root_folder: PathBuf = self.root_folder_path.into();
+        let root_folder: path::PathBuf = self.root_folder_path.into();
         // Get path from HTTP request
         let mut http_requested_path = get_requested_path(&request)?;
         // If a folder is requested, it should be returned index.html from this folder
