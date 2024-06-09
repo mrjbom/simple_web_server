@@ -55,7 +55,7 @@ impl ThreadPool {
                     job();
                     active_jobs_counter.fetch_sub(1, atomic::Ordering::SeqCst);
                 }
-                println!("Finish thread {thread_id}");
+                println!("Finishing thread {thread_id}");
             });
         }
 
