@@ -1,4 +1,3 @@
-use clap::Parser;
 use simple_web_server::{config, Server};
 use std::{net, path, process};
 
@@ -39,7 +38,7 @@ fn main() -> process::ExitCode {
 }
 
 /// Simple multithreaded web server
-#[derive(Parser, Debug)]
+#[derive(clap::Parser, Debug)]
 struct Args {
     /// IP address and port that the server is listening on. It must be in the format IP:PORT.
     /// 127.0.0.1:7878 for example.
@@ -86,7 +85,7 @@ mod tests {
             threads_number: 4,
         };
         let config = args.build_config();
-        assert!(matches!(config, Err(config::ConfigError::WrongAddr(_))));
+        assert!(matches!(config, Err(config::Error::WrongAddr(_))));
     }
 
     #[test]
@@ -97,10 +96,7 @@ mod tests {
             threads_number: 4,
         };
         let config = args.build_config();
-        assert!(matches!(
-            config,
-            Err(config::ConfigError::WrongRootFolderPath)
-        ));
+        assert!(matches!(config, Err(config::Error::WrongRootFolderPath)));
     }
 
     #[test]
@@ -111,10 +107,7 @@ mod tests {
             threads_number: 0,
         };
         let config = args.build_config();
-        assert!(matches!(
-            config,
-            Err(config::ConfigError::ZeroThreadsNumber)
-        ));
+        assert!(matches!(config, Err(config::Error::ZeroThreadsNumber)));
     }
 
     #[test]
