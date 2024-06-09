@@ -8,6 +8,7 @@ mod thread_pool;
 pub struct Server<'a> {
     config: config::Config<'a>,
     tcp_listener: net::TcpListener,
+    thread_pool: thread_pool::ThreadPool,
 }
 
 impl<'a> Server<'a> {
@@ -15,9 +16,13 @@ impl<'a> Server<'a> {
     pub fn init(config: config::Config<'a>) -> Result<Self, Error> {
         // Binding TCP listener
         let tcp_listener = net::TcpListener::bind(config.socket_addr_v4)?;
+        // Create thread pool
+        let thread_pool = thread_pool::ThreadPool::new(config.threads_number);
+
         Ok(Server {
             config,
             tcp_listener,
+            thread_pool,
         })
     }
 

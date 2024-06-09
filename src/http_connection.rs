@@ -194,8 +194,7 @@ fn form_http_answer(requested_file_content: Option<&String>) -> String {
     }
     // Adds Content-Length header
     use std::fmt::Write;
-    write!(&mut answer, "Content-Length: {}\r\n", content.len())
-        .expect("write! macro error, so bad...");
+    let _ = write!(&mut answer, "Content-Length: {}\r\n", content.len());
     // Adds empty line
     answer.push_str("\r\n");
     // Adds content
