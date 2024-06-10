@@ -3,7 +3,7 @@ use std::{sync, sync::atomic, sync::mpsc};
 
 pub struct ThreadPool {
     threads_handlers: Vec<thread::JoinHandle<()>>,
-    threads_number: u8,
+    _threads_number: u8,
     active_threads_number: sync::Arc<atomic::AtomicU8>,
     active_jobs_counter: sync::Arc<atomic::AtomicU8>,
     jobs_queue_size: sync::Arc<atomic::AtomicU8>,
@@ -41,12 +41,12 @@ impl ThreadPool {
             let job_receiver_mutex = sync::Arc::clone(&job_receiver_mutex);
             // Create and start thread
             let thread_handler = thread::spawn(move || {
-                let thread_id = thread_id;
-                println!("Starting thread {thread_id}");
+                let _thread_id = thread_id;
+                //println!("Starting thread {thread_id}");
                 loop {
                     // Get job receiver mutex guard
                     let job_receiver_mutex_guard = job_receiver_mutex.lock().unwrap();
-                    println!("Thread {thread_id} waiting Job");
+                    //println!("Thread {thread_id} waiting Job");
                     // Receive a Job from channel
                     let result = job_receiver_mutex_guard.recv();
                     // Unlock mutex
@@ -62,19 +62,19 @@ impl ThreadPool {
                     let job = result.unwrap();
                     // Execute Job
                     active_jobs_counter.fetch_add(1, atomic::Ordering::SeqCst);
-                    println!("Thread {thread_id} starts Job executing...");
+                    //println!("Thread {thread_id} starts Job executing...");
                     job();
                     active_jobs_counter.fetch_sub(1, atomic::Ordering::SeqCst);
                 }
                 active_threads_number.fetch_sub(1, atomic::Ordering::SeqCst);
-                println!("Finishing thread {thread_id}");
+                //println!("Finishing thread {thread_id}");
             });
             threads_handlers.push(thread_handler);
         }
 
         Self {
             threads_handlers,
-            threads_number,
+            _threads_number: threads_number,
             active_threads_number,
             active_jobs_counter,
             jobs_queue_size,

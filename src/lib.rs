@@ -58,7 +58,7 @@ impl<'a> Server<'a> {
                 let peer_addr = stream.peer_addr();
                 match peer_addr {
                     Ok(addr) => println!("Performing connection from {addr}..."),
-                    Err(error) => eprintln!("Performing connection..."),
+                    Err(_error) => eprintln!("Performing connection..."),
                 }
 
                 // Performs connection serving using the Thread Pool

@@ -231,9 +231,9 @@ pub enum Error {
     #[error("Wrong URI in request {0}")]
     WrongUri(#[from] string::FromUtf8Error),
     #[error("Failed to write HTTP answer to socket {0}")]
-    AnswerWriteError(io::Error),
+    _AnswerWriteError(io::Error),
     #[error("Failed to shutdown TCP connection {0}")]
-    ShutdownFailed(io::Error),
+    _ShutdownFailed(io::Error),
 }
 
 static NOT_FOUND_HTML_PAGE_CODE: &str = r#"<!DOCTYPE html>

@@ -31,7 +31,6 @@ fn main() -> process::ExitCode {
     let server = server.unwrap();
     println!("Initialized.");
 
-    println!("Run");
     server.run();
 
     return process::ExitCode::SUCCESS;
