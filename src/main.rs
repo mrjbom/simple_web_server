@@ -48,7 +48,7 @@ struct Args {
     #[arg(id = "root_folder", short, long, default_value = "./www")]
     root_folder_path: String,
     /// Number of threads that serve connections. Max 255.
-    #[arg(short, long, default_value_t = 4)]
+    #[arg(short, long, default_value_t = 8)]
     threads_number: u8,
 }
 

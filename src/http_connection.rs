@@ -1,17 +1,18 @@
-use std::{fs, io, io::BufRead, net, path, string, time};
+use std::{fs, io, io::BufRead, net, path, string, sync, time};
 
 const MAX_REQUEST_READ_SIZE: usize = 4096;
-const READ_TIMEOUT_MILLIS: u64 = 5000;
+const READ_TIMEOUT_MILLIS: u64 = 2000;
 
 /// HTTP connection.
 /// Manages the connection, parses the request and generates a response.
-pub struct HTTPConnection<'a> {
+pub struct HTTPConnection {
     tcp_stream: net::TcpStream,
-    root_folder_path: &'a path::Path,
+    root_folder_path: path::PathBuf,
 }
 
-impl<'a> HTTPConnection<'a> {
-    pub fn new(tcp_stream: net::TcpStream, root_folder_path: &'a path::Path) -> Self {
+impl HTTPConnection {
+    pub fn new(tcp_stream: net::TcpStream, root_folder_path: sync::Arc<path::PathBuf>) -> Self {
+        let root_folder_path = sync::Arc::unwrap_or_clone(root_folder_path);
         Self {
             tcp_stream,
             root_folder_path,
@@ -19,7 +20,7 @@ impl<'a> HTTPConnection<'a> {
     }
 
     /// Checks and performs the HTTP connection
-    pub fn perform(self) -> Result<(), Error> {
+    pub fn perform(self) {
         let mut stream = self.tcp_stream;
         // Thread will wait for a suitable HTTP request or until the amount of data exceeds MAX_REQUEST_READ_SIZE for an unlimited amount of time.
         // I don't need it, so the connection should be terminated if the data doesn't arrive within READ_TIMEOUT_MILLIS milliseconds.
@@ -30,7 +31,21 @@ impl<'a> HTTPConnection<'a> {
         let mut buf_reader = io::BufReader::new(&stream);
 
         // Check and read request
-        let request = read_http_request(&mut buf_reader)?;
+        let request = read_http_request(&mut buf_reader);
+        if let Err(ref error) = request {
+            if let Error::RequestReadError(error) = error {
+                // I'm not interested in timeout-related errors.
+                // This is a very common error, since some browsers initiate several (usually two) connections at once,
+                // the first is processed normally, but the second does not send anything (apparently this was done for optimizations).
+                if error.kind() == io::ErrorKind::TimedOut {
+                    // Exit without any message
+                    return;
+                }
+            }
+            eprintln!("Error in HTTP connection: {error}");
+            return;
+        }
+        let request = request.unwrap();
         // HTTP request has been read
         //println!("request:\n\"{request}\"");
         //println!("request length: {}", request.len());
@@ -41,15 +56,21 @@ impl<'a> HTTPConnection<'a> {
         // Get root folder
         let root_folder: path::PathBuf = self.root_folder_path.into();
         // Get path from HTTP request
-        let mut http_requested_path = get_requested_path(&request)?;
+        let http_requested_path = get_requested_path(&request);
+        if let Err(ref error) = http_requested_path {
+            eprintln!("Error in HTTP connection: {error}");
+            return;
+        }
+        let mut http_requested_path = http_requested_path.unwrap();
         // If a folder is requested, it should be returned index.html from this folder
         if http_requested_path.is_dir() {
             http_requested_path.push("index.html");
         }
         // Remove prefix "/" from http requested path
         let http_requested_path = http_requested_path.strip_prefix("/");
-        if let Err(_error) = http_requested_path {
-            return Err(Error::WrongRequest);
+        if let Err(ref error) = http_requested_path {
+            eprintln!("Error in HTTP connection: {error}");
+            return;
         }
         let http_requested_path = http_requested_path.unwrap();
         // Root folder + path from HTTP
@@ -68,16 +89,16 @@ impl<'a> HTTPConnection<'a> {
 
         let result = buf_writer.write_all(answer.as_bytes());
         if let Err(error) = result {
-            return Err(Error::AnswerWriteError(error));
+            eprintln!("Error in HTTP connection: {error}");
+            return;
         }
         drop(buf_writer);
 
         let result = stream.shutdown(net::Shutdown::Both);
         if let Err(error) = result {
-            return Err(Error::ShutdownFailed(error));
+            eprintln!("Error in HTTP connection: {error}");
+            return;
         }
-
-        Ok(())
     }
 }
 

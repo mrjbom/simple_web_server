@@ -1,9 +1,9 @@
 /// Server
-use std::{io, net, sync::mpsc};
+use std::{io, net, sync, sync::mpsc};
 
 pub mod config;
 mod http_connection;
-pub mod thread_pool;
+mod thread_pool;
 
 pub struct Server<'a> {
     config: config::Config<'a>,
@@ -41,20 +41,8 @@ impl<'a> Server<'a> {
 
     /// Handles incoming connections in loop
     pub fn run(&self) {
+        let root_folder_path = sync::Arc::new(self.config.root_folder_path.to_owned());
         loop {
-            // Ctrl-C handling
-            let result = self.ctrl_c_receiver.try_recv();
-            match result {
-                Err(mpsc::TryRecvError::Disconnected) => {
-                    panic!("Ctrl-C signal handler disconnect his channel");
-                }
-                Ok(_) => {
-                    // Ctrl-C is received, shutting down the server.
-                    return;
-                }
-                Err(mpsc::TryRecvError::Empty) => {}
-            }
-
             // Service incoming connections
             let result = self.tcp_listener.set_nonblocking(true);
             if result.is_err() {
@@ -65,29 +53,35 @@ impl<'a> Server<'a> {
             if let Ok((stream, _)) = stream {
                 let result = stream.set_nonblocking(false);
                 if result.is_err() {
-                    return;
+                    continue;
                 }
                 let peer_addr = stream.peer_addr();
                 match peer_addr {
-                    Ok(addr) => println!("{addr}"),
-                    Err(error) => eprintln!("Failed to get remote address: {error}"),
+                    Ok(addr) => println!("Performing connection from {addr}..."),
+                    Err(error) => eprintln!("Performing connection..."),
                 }
 
-                // Perform connection serving
-                let http_connection =
-                    http_connection::HTTPConnection::new(stream, self.config.root_folder_path);
-                let result = http_connection.perform();
+                // Performs connection serving using the Thread Pool
+                let root_folder_path = sync::Arc::clone(&root_folder_path);
+                let job = Box::new(move || {
+                    let http_connection =
+                        http_connection::HTTPConnection::new(stream, root_folder_path);
+                    http_connection.perform();
+                });
+                self.thread_pool.send_job(job);
+            }
 
-                // Threads error serving
-                if let Err(error) = result {
-                    // I don't want to print timeout-related errors
-                    if let http_connection::Error::RequestReadError(ref io_error) = error {
-                        if io_error.kind() == io::ErrorKind::TimedOut {
-                            continue;
-                        }
-                    }
-                    eprintln!("Error in HTTP connection: {error}");
+            // Ctrl-C handling
+            let result = self.ctrl_c_receiver.try_recv();
+            match result {
+                Err(mpsc::TryRecvError::Disconnected) => {
+                    panic!("Ctrl-C signal handler disconnected");
                 }
+                Ok(_) => {
+                    // Ctrl-C is received, shutting down the server.
+                    return;
+                }
+                Err(mpsc::TryRecvError::Empty) => {}
             }
         }
     }
